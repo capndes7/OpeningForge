@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OpeningForge — Chess Opening Trainer</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header>
+  <div class="logo">Opening<span>Forge</span></div>
+  <div class="controls">
+    <select id="openingSelect">
+      <option value="">— Choose Opening —</option>
+      <option value="alapin">Alapin (Anti-Sicilian)</option>
+      <option value="bird">Bird Opening</option>
+      <option value="caro_kann">Caro-Kann Defense</option>
+      <option value="dutch">Dutch Defense</option>
+      <option value="italian">Italian Game</option>
+      <option value="kings_gambit">King's Gambit</option>
+      <option value="king_indian">King's Indian Defense</option>
+      <option value="london">London System</option>
+      <option value="queens_gambit">Queen's Gambit</option>
+      <option value="ruy_lopez">Ruy Lopez</option>
+      <option value="sicilian_dragon">Sicilian Dragon</option>
+      <option value="najdorf_english">Sicilian Najdorf</option>
+      <option value="vienna">Vienna Game</option>
+    </select>
+    <select id="variationSelect" disabled><option value="">— Variation —</option></select>
+    <button class="btn btn-outline" id="learnBtn" disabled>Learn</button>
+    <button class="btn btn-gold"    id="testBtn"  disabled>Test me</button>
+    <button class="btn btn-premium" id="practiceBtn" disabled><span class="btn-premium-icon">◈</span> Practice</button>
+    <span style="width:1px;height:22px;background:var(--glass-border);margin:0 2px"></span>
+    <button class="btn btn-outline" id="playBotBtn">Play vs Bot</button>
+  </div>
+</header>
+<main id="mainArea">
+  <div id="welcome">
+    <div class="welcome-badge">Chess Opening Trainer</div>
+    <h1>OpeningForge</h1>
+    <div class="welcome-divider"></div>
+    <p>Master your chess openings — move by move, with explanations for every idea.</p>
+    <p class="hint">↑ Select an opening above to begin, or play a game against the bot</p>
+  </div>
+</main>
+
+<template id="appTpl">
+  <section class="board-section">
+    <div class="mode-badge learn" id="modeBadge">LEARN MODE</div>
+    <div class="board-wrap">
+      <div class="board-container">
+        <div class="rank-labels" id="rankLabels"></div>
+        <div>
+          <div id="chessboard"></div>
+          <div class="file-labels" id="fileLabels"></div>
+        </div>
+      </div>
+      <div class="feedback-bar" id="feedbackBar"></div>
+    </div>
+    <div class="auto-label" id="autoLabel"></div>
+    <div class="board-controls">
+      <div class="move-nav">
+        <button class="nav-btn" id="btnFirst" title="First move">⏮</button>
+        <button class="nav-btn" id="btnPrev" title="Previous move">◀</button>
+        <button class="nav-btn" id="btnNext" title="Next move">▶</button>
+        <button class="nav-btn" id="btnLast" title="Last move">⏭</button>
+      </div>
+      <div class="progress-bar-wrap"><div class="progress-bar" id="progressBar" style="width:0%"></div></div>
+      <button class="nav-btn flip-btn" id="btnFlip" title="Flip board">⇅</button>
+      <button class="nav-btn" id="btnMute" title="Mute sound">🔊</button>
+    </div>
+    <div class="test-score" id="testScore">
+      <span>✔ <span class="score-correct" id="scoreCorrect">0</span> correct</span>
+      <span>✘ <span class="score-wrong"   id="scoreWrong">0</span> wrong</span>
+    </div>
+  </section>
+  <aside class="side-panel" id="sidePanel">
+    <div id="learnContent" style="display:flex;flex-direction:column;flex:1;overflow:hidden">
+      <div class="opening-intro">
+        <div class="opening-subtitle" id="openingSubtitle">OPENING</div>
+        <div class="opening-title"   id="openingTitle">—</div>
+        <p id="openingIntroText"></p>
+      </div>
+      <div class="move-feed" id="moveFeed"></div>
+    </div>
+    <div class="test-panel" id="testContent">
+      <div class="test-title">Opening Test</div>
+      <p class="test-instruction" id="testInstruction">Play the opening from the beginning. Only move your pieces — the opponent moves automatically.</p>
+      <div class="test-move-status" id="testMoveStatus"></div>
+      <div class="test-result" id="testResult">
+        <div class="result-score" id="resultScore">—</div>
+        <div class="result-label">correct moves</div>
+        <div class="result-msg"   id="resultMsg"></div>
+        <button class="btn btn-gold" id="retryBtn">Try again</button>
+      </div>
+    </div>
+  </aside>
+</template>
+
+<template id="botTpl">
+  <section class="board-section">
+    <div class="mode-badge test" id="botModeBadge">PLAY VS BOT</div>
+    <div class="board-wrap">
+      <div class="board-container">
+        <div class="rank-labels" id="rankLabels"></div>
+        <div>
+          <div id="chessboard"></div>
+          <div class="file-labels" id="fileLabels"></div>
+        </div>
+      </div>
+      <div class="feedback-bar" id="feedbackBar"></div>
+      <div class="game-over-overlay" id="gameOverOverlay">
+        <div class="game-over-card">
+          <div class="game-over-icon" id="gameOverIcon">🏆</div>
+          <div class="game-over-title" id="gameOverTitle">Checkmate!</div>
+          <div class="game-over-sub" id="gameOverSub">You win.</div>
+          <button class="btn btn-gold" id="gameOverDismiss" style="margin-top:14px">Keep Viewing Board</button>
+        </div>
+      </div>
+    </div>
+    <div class="auto-label" id="autoLabel"></div>
+    <div class="board-controls">
+      <button class="nav-btn flip-btn" id="btnFlip" title="Flip board">⇅</button>
+      <div class="progress-bar-wrap" style="visibility:hidden"><div class="progress-bar" style="width:0%"></div></div>
+      <button class="nav-btn" id="btnMute" title="Mute sound">🔊</button>
+    </div>
+  </section>
+  <aside class="side-panel" id="sidePanel">
+    <div class="opening-intro">
+      <div class="opening-subtitle">PLAY VS BOT</div>
+      <div class="opening-title" id="botTitle">Choose a level</div>
+      <p id="botStatusText">Pick a difficulty and a color, then start the game.</p>
+    </div>
+    <div style="padding:16px 26px;display:flex;flex-direction:column;gap:12px;border-bottom:1px solid var(--glass-border)">
+      <div>
+        <label style="font-size:0.72rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:6px">Difficulty</label>
+        <select id="botLevelSelect" style="width:100%"></select>
+      </div>
+      <div>
+        <label style="font-size:0.72rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:6px">Play as</label>
+        <select id="botColorSelect" style="width:100%">
+          <option value="white">White</option>
+          <option value="black">Black</option>
+        </select>
+      </div>
+      <button class="btn btn-gold" id="botStartBtn" style="width:100%">Start Game</button>
+      <button class="btn btn-outline" id="botResignBtn" style="width:100%;display:none">Resign</button>
+    </div>
+
+    <div class="captured-card" id="capturedCard">
+      <div class="captured-card-row">
+        <span class="captured-card-label">Bot captured</span>
+        <div class="captured-card-icons" id="capturedByBotIcons"></div>
+      </div>
+      <div class="captured-card-row">
+        <span class="captured-card-label">You captured</span>
+        <div class="captured-card-icons" id="capturedByPlayerIcons"></div>
+      </div>
+      <div class="captured-card-diff" id="capturedDiff"></div>
+    </div>
+
+    <button class="moves-toggle" id="movesToggleBtn">Show Moves <span id="movesToggleArrow">▾</span></button>
+    <div class="move-feed collapsed" id="botMoveFeed"></div>
+
+    <div class="bot-chat-log-wrap">
+      <div class="bot-chat-header">Bot Commentary</div>
+      <div class="bot-chat-log" id="botChatLog"></div>
+    </div>
+  </aside>
+</template>
+
+<template id="practiceTpl">
+  <section class="board-section">
+    <div class="mode-badge learn" id="practiceModeBadge">PRACTICE</div>
+    <div class="board-wrap">
+      <div class="board-container">
+        <div class="rank-labels" id="rankLabels"></div>
+        <div>
+          <div id="chessboard"></div>
+          <div class="file-labels" id="fileLabels"></div>
+        </div>
+      </div>
+      <div class="feedback-bar" id="feedbackBar"></div>
+    </div>
+    <div class="off-script-banner" id="offScriptBanner">
+      <span>You've gone off the prepared line — wanna undo?</span>
+      <button class="btn btn-gold" id="practiceUndoBtn">Undo</button>
+    </div>
+    <div class="auto-label" id="autoLabel"></div>
+    <div class="board-controls">
+      <button class="nav-btn flip-btn" id="btnFlip" title="Flip board">⇅</button>
+      <button class="nav-btn" id="practiceUndoBtnSmall" title="Undo last move">↶</button>
+      <div class="progress-bar-wrap" style="visibility:hidden"><div class="progress-bar" style="width:0%"></div></div>
+      <button class="nav-btn" id="btnMute" title="Mute sound">🔊</button>
+    </div>
+  </section>
+  <aside class="side-panel" id="sidePanel">
+    <div class="opening-intro">
+      <div class="opening-subtitle" id="practiceSubtitle">PRACTICE</div>
+      <div class="opening-title" id="practiceTitle">Loading…</div>
+      <p id="practiceStatusText">Play the opening's ideas out — the bot will follow the line with you.</p>
+    </div>
+    <div class="practice-explanation-wrap">
+      <div class="practice-explanation-header">Current Idea</div>
+      <div class="practice-explanation" id="practiceExplanation">Make a move to begin.</div>
+    </div>
+  </aside>
+</template>
+
+<script src="pieces.js"></script>
+<script src="openings.js"></script>
+<script src="app.js"></script>
+<script src="bot.js"></script>
+<script src="practice.js"></script>
+</body>
+</html>
