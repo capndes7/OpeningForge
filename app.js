@@ -73,6 +73,19 @@ practiceBtn.addEventListener('click', () => {
 });
 document.getElementById('playBotBtn').addEventListener('click', () => { if (S.autoTimer) clearTimeout(S.autoTimer); loadBotMode(); });
 
+// ── BOARD THEME (applies globally across Learn/Test/Bot/Practice — pure CSS) ──
+(function initBoardTheme() {
+  const sel = document.getElementById('boardThemeSelect');
+  let saved = 'classic';
+  try { saved = localStorage.getItem('openingforge-board-theme') || 'classic'; } catch (e) {}
+  sel.value = saved;
+  document.body.dataset.boardTheme = saved;
+  sel.addEventListener('change', () => {
+    document.body.dataset.boardTheme = sel.value;
+    try { localStorage.setItem('openingforge-board-theme', sel.value); } catch (e) {}
+  });
+})();
+
 function showWelcome() {
   mainArea.innerHTML = '<div id="welcome"><h1>OpeningForge</h1><p>Master your chess openings — move by move, with explanations for every idea.</p><p class="hint">↑ Select an opening above to begin</p></div>';
 }
@@ -376,7 +389,7 @@ function renderBoard(isTest) {
       const sq = file + rank;
       const piece = chess.get(sq);
       const fi = files.indexOf(file), ri = rank;
-      const isLight = (fi + ri) % 2 === 1;
+      const isLight = (fi + ri) % 2 === 0;
 
       const cell = document.createElement('div');
       cell.className = 'sq ' + (isLight ? 'light' : 'dark');
