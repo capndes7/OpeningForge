@@ -13,19 +13,36 @@
   <div class="controls">
     <select id="openingSelect">
       <option value="">— Choose Opening —</option>
-      <option value="alapin">Alapin (Anti-Sicilian)</option>
-      <option value="bird">Bird Opening</option>
-      <option value="caro_kann">Caro-Kann Defense</option>
-      <option value="dutch">Dutch Defense</option>
-      <option value="italian">Italian Game</option>
-      <option value="kings_gambit">King's Gambit</option>
-      <option value="king_indian">King's Indian Defense</option>
-      <option value="london">London System</option>
-      <option value="queens_gambit">Queen's Gambit</option>
-      <option value="ruy_lopez">Ruy Lopez</option>
-      <option value="sicilian_dragon">Sicilian Dragon</option>
-      <option value="najdorf_english">Sicilian Najdorf</option>
-      <option value="vienna">Vienna Game</option>
+      <optgroup label="⚔️ King's Pawn Openings">
+        <option value="italian">Italian Game</option>
+        <option value="ruy_lopez">Ruy Lopez</option>
+        <option value="scotch">Scotch Game</option>
+        <option value="vienna">Vienna Game</option>
+        <option value="kings_gambit">King's Gambit</option>
+      </optgroup>
+      <optgroup label="🛡️ Sicilian & Anti-Sicilians">
+        <option value="sicilian_dragon">Sicilian Dragon</option>
+        <option value="najdorf_english">Sicilian Najdorf</option>
+        <option value="alapin">Alapin (Anti-Sicilian)</option>
+      </optgroup>
+      <optgroup label="🏰 Other King's Pawn Defenses">
+        <option value="caro_kann">Caro-Kann Defense</option>
+        <option value="french">French Defense</option>
+        <option value="scandinavian">Scandinavian Defense</option>
+      </optgroup>
+      <optgroup label="♟️ Queen's Pawn Openings">
+        <option value="london">London System</option>
+        <option value="queens_gambit">Queen's Gambit</option>
+      </optgroup>
+      <optgroup label="🧩 Indian Defenses & More">
+        <option value="king_indian">King's Indian Defense</option>
+        <option value="nimzo_indian">Nimzo-Indian Defense</option>
+        <option value="dutch">Dutch Defense</option>
+      </optgroup>
+      <optgroup label="🏳️ Flank Openings">
+        <option value="bird">Bird Opening</option>
+        <option value="english">English Opening</option>
+      </optgroup>
     </select>
     <select id="variationSelect" disabled><option value="">— Variation —</option></select>
     <button class="btn btn-outline" id="learnBtn" disabled>Learn</button>
