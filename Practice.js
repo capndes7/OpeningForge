@@ -257,7 +257,7 @@ function renderPracticeBoard() {
       const sq = file + rank;
       const piece = chess.get(sq);
       const fi = files.indexOf(file), ri = rank;
-      const isLight = (fi + ri) % 2 === 1;
+      const isLight = (fi + ri) % 2 === 0;
 
       const cell = document.createElement('div');
       cell.className = 'sq ' + (isLight ? 'light' : 'dark');
