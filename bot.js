@@ -54,7 +54,8 @@ function initBotDom() {
   BD = {};
   ['rankLabels','fileLabels','feedbackBar','autoLabel','btnFlip','btnMute',
    'botTitle','botStatusText','botLevelSelect','botColorSelect','botStartBtn','botResignBtn','botMoveFeed',
-   'capturedByBotIcons','capturedByPlayerIcons','capturedDiff','movesToggleBtn','movesToggleArrow','botChatLog'].forEach(id => {
+   'capturedByBotIcons','capturedByPlayerIcons','capturedDiff','movesToggleBtn','movesToggleArrow','botChatLog',
+   'gameOverOverlay','gameOverIcon','gameOverTitle','gameOverSub','gameOverDismiss'].forEach(id => {
     BD[id] = document.getElementById(id);
   });
   BD.btnFlip.addEventListener('click', () => { Bot.flipped = !Bot.flipped; buildBotCoords(); renderBotBoard(); });
@@ -72,6 +73,18 @@ function initBotDom() {
     BD.movesToggleBtn.firstChild.textContent = collapsed ? 'Show Moves ' : 'Hide Moves ';
     BD.movesToggleArrow.textContent = collapsed ? '▾' : '▴';
   });
+  BD.gameOverDismiss.addEventListener('click', () => {
+    BD.gameOverOverlay.classList.remove('show');
+  });
+}
+
+// Shows the win/loss/draw overlay on the board and logs the result to chat.
+function showGameOverOverlay(outcome, title, sub) {
+  BD.gameOverOverlay.className = 'game-over-overlay show ' + outcome; // win | loss | draw
+  BD.gameOverIcon.textContent = outcome === 'win' ? '🏆' : outcome === 'loss' ? '💀' : '🤝';
+  BD.gameOverTitle.textContent = title;
+  BD.gameOverSub.textContent = sub;
+  addChatMessage(title + ' ' + sub, outcome === 'win' ? 'brilliant' : outcome === 'loss' ? 'blunder' : 'inaccuracy');
 }
 
 function resignBotGame() {
@@ -79,8 +92,9 @@ function resignBotGame() {
   Bot.gameOver = true;
   Bot.thinking = false;
   BD.autoLabel.textContent = '';
-  const opponent = Bot.playerColor === 'white' ? 'Black (the bot)' : 'White (the bot)';
+  const opponent = Bot.playerColor === 'white' ? 'Black' : 'White';
   BD.botStatusText.textContent = `You resigned. ${opponent} wins.`;
+  showGameOverOverlay('loss', 'You Resigned', `${opponent} wins.`);
   BD.botResignBtn.style.display = 'none';
   renderBotBoard();
 }
@@ -273,8 +287,10 @@ function startBotGame() {
   BD.movesToggleBtn.firstChild.textContent = 'Show Moves ';
   BD.movesToggleArrow.textContent = '▾';
   BD.botChatLog.innerHTML = '';
+  BD.gameOverOverlay.classList.remove('show');
   BD.botTitle.textContent = `Level ${Bot.level+1} — ${BOT_LEVELS[Bot.level].label}`;
   BD.botStatusText.textContent = `Playing as ${Bot.playerColor === 'white' ? 'White' : 'Black'}.`;
+  addChatMessage(`New game started — Level ${Bot.level+1} (${BOT_LEVELS[Bot.level].label}). You're playing ${Bot.playerColor === 'white' ? 'White' : 'Black'}.`, 'good');
   BD.autoLabel.textContent = '';
   BD.botResignBtn.style.display = 'block';
   BD.botStartBtn.textContent = 'Restart Game';
@@ -323,14 +339,29 @@ function renderCapturedRows() {
 
 function botGameOverCheck() {
   if (Bot.chess.in_checkmate()) {
-    const winner = Bot.chess.turn() === 'w' ? 'Black' : 'White';
+    const winnerColor = Bot.chess.turn() === 'w' ? 'black' : 'white'; // side that just moved won
+    const winnerLabel = winnerColor === 'white' ? 'White' : 'Black';
+    const outcome = winnerColor === Bot.playerColor ? 'win' : 'loss';
     Bot.gameOver = true;
-    BD.botStatusText.textContent = `Checkmate — ${winner} wins.`;
+    BD.botStatusText.textContent = `Checkmate — ${winnerLabel} wins.`;
+    showGameOverOverlay(outcome, outcome === 'win' ? 'Checkmate — You Win!' : 'Checkmate', `${winnerLabel} wins.`);
     BD.botResignBtn.style.display = 'none';
     return true;
   }
-  if (Bot.chess.in_stalemate()) { Bot.gameOver = true; BD.botStatusText.textContent = 'Draw by stalemate.'; BD.botResignBtn.style.display = 'none'; return true; }
-  if (Bot.chess.in_draw())      { Bot.gameOver = true; BD.botStatusText.textContent = 'Draw.'; BD.botResignBtn.style.display = 'none'; return true; }
+  if (Bot.chess.in_stalemate()) {
+    Bot.gameOver = true;
+    BD.botStatusText.textContent = 'Draw by stalemate.';
+    showGameOverOverlay('draw', 'Stalemate', 'The game is a draw.');
+    BD.botResignBtn.style.display = 'none';
+    return true;
+  }
+  if (Bot.chess.in_draw()) {
+    Bot.gameOver = true;
+    BD.botStatusText.textContent = 'Draw.';
+    showGameOverOverlay('draw', 'Draw', 'Neither side could force a win.');
+    BD.botResignBtn.style.display = 'none';
+    return true;
+  }
   return false;
 }
 
@@ -382,7 +413,9 @@ function triggerBotMove() {
   }).catch((err) => {
     Bot.thinking = false;
     BD.autoLabel.textContent = '';
-    BD.botStatusText.textContent = (err && err.message) ? err.message : "Couldn't reach the chess engine — check your network settings and try again.";
+    const msg = (err && err.message) ? err.message : "Couldn't reach the chess engine — check your network settings and try again.";
+    BD.botStatusText.textContent = msg;
+    addChatMessage(msg, 'blunder');
     renderBotBoard();
   });
 }
@@ -536,7 +569,7 @@ function renderBotBoard() {
       const sq = file + rank;
       const piece = chess.get(sq);
       const fi = files.indexOf(file), ri = rank;
-      const isLight = (fi + ri) % 2 === 1;
+      const isLight = (fi + ri) % 2 === 0;
 
       const cell = document.createElement('div');
       cell.className = 'sq ' + (isLight ? 'light' : 'dark');
